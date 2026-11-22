@@ -2,7 +2,7 @@
 
 **Chat for people who can't be understood.**
 
-Haven is an accessible, multilingual care chat for seniors and people with neurological speech impairment (after a stroke, or with Parkinson's, ALS/MND, cerebral palsy or a brain injury). It is built on the **Nexconn Chat SDK** for the Nexconn Build Challenge, in the **Humanitarian & Social Good** track.
+Haven is an accessible, multilingual care chat for seniors and people with neurological speech impairment (after a stroke, or with Parkinson's, ALS/MND, cerebral palsy or a brain injury). It is built on the **Nexconn Chat SDK** for the Nexconn Build Challenge, in the **Open Innovation** track.
 
 > Haven supports care. It does not diagnose.
 
