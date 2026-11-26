@@ -3,7 +3,6 @@ import { Onboarding } from './views/Onboarding';
 import { MemberView } from './views/MemberView';
 import { ConsoleView } from './views/ConsoleView';
 import { useHaven } from './model/useHaven';
-import { LANG_LABEL } from './i18n/phrases';
 import { Logo } from './components/Logo';
 import type { Lang, Profile, Role, Session } from './types';
 
@@ -71,31 +70,32 @@ function Shell({ stored, onSignOut }: { stored: Stored; onSignOut: () => void })
   const isMember = profile.role === 'member';
 
   return (
-    <div className={`app ${isMember ? 'is-member' : 'is-console'}`}>
-      <header className="topbar">
-        <div className="brand small">
-          <Logo size={32} />
-          <strong>Haven</strong>
-          {!isMember && <span className="crumb">Dispatch room</span>}
+    <div className={`app ${isMember ? 'app-member' : 'app-console'}`}>
+      <header className="bar">
+        <div className="bar-brand">
+          <Logo size={30} />
+          <span>Haven</span>
         </div>
-        <div className="topbar-right">
-          <span className={`conn ${api.connection}`} title={`Connection: ${api.connection}`}>
-            {api.connection === 'connected' ? (session.mode === 'nexconn' ? 'Nexconn · live' : 'Demo mode · this browser') : api.connection}
+        <div className="bar-right">
+          <span className={`conn conn-${api.connection}`} title={session.mode === 'nexconn' ? 'Connected through Nexconn' : 'Demo: messages stay in this browser'}>
+            <i aria-hidden />
+            {api.connection !== 'connected' ? (api.connection === 'connecting' ? 'Connecting' : 'Offline') : session.mode === 'nexconn' ? 'Live' : 'Demo'}
           </span>
-          <span className="me">
-            {profile.name} · {profile.role} · {LANG_LABEL[profile.lang]}
+          <span className="bar-me">
+            <span className="avatar avatar-sm">{profile.name.slice(0, 1).toUpperCase()}</span>
+            <span className="bar-me-name">{profile.name}</span>
           </span>
-          <button className="link" onClick={onSignOut}>
-            Switch
+          <button className="btn btn-quiet btn-sm" onClick={onSignOut}>
+            Sign out
           </button>
         </div>
       </header>
-      {session.mode === 'local' && (
-        <p className="demo-banner">
-          Demo mode: no Nexconn credentials on the server, so messages travel between tabs of this browser. Open a second tab as a volunteer to try the full flow. Set <code>NEXCONN_APP_KEY</code> and <code>NEXCONN_APP_SECRET</code> to go live.
+      {session.mode === 'local' && !isMember && (
+        <p className="demo-note">
+          Demo mode: messages stay in this browser. Open Haven in another tab as a member to try it, or add <code>NEXCONN_APP_KEY</code> and <code>NEXCONN_APP_SECRET</code> to go live.
         </p>
       )}
-      {api.error && <p className="error banner">{api.error}</p>}
+      {api.error && <p className="err err-bar">Could not connect: {api.error}</p>}
       {isMember ? <MemberView me={profile} api={api} /> : <ConsoleView me={profile} api={api} />}
     </div>
   );

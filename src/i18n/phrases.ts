@@ -44,8 +44,8 @@ export const PHRASES: Phrase[] = [
 
   // ---- system
   { id: 's_checkin', urgency: 'low', speaker: 'system', text: { en: 'Hello! How are you today?', hi: 'नमस्ते! आज आप कैसे हैं?', pa: 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਅੱਜ ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ?' } },
-  { id: 's_notok', urgency: 'high', speaker: 'system', text: { en: 'Replied "not okay" to a check-in', hi: 'चेक-इन पर "ठीक नहीं" कहा', pa: 'ਚੈੱਕ-ਇਨ ਤੇ "ਠੀਕ ਨਹੀਂ" ਕਿਹਾ' } },
-  { id: 's_missed', urgency: 'medium', speaker: 'system', text: { en: 'Missed a check-in', hi: 'चेक-इन का जवाब नहीं दिया', pa: 'ਚੈੱਕ-ਇਨ ਦਾ ਜਵਾਬ ਨਹੀਂ ਦਿੱਤਾ' } },
+  { id: 's_notok', urgency: 'high', speaker: 'system', text: { en: 'Said "not okay" at check-in', hi: 'चेक-इन पर "ठीक नहीं" कहा', pa: 'ਚੈੱਕ-ਇਨ ਤੇ "ਠੀਕ ਨਹੀਂ" ਕਿਹਾ' } },
+  { id: 's_missed', urgency: 'medium', speaker: 'system', text: { en: 'Did not answer a check-in', hi: 'चेक-इन का जवाब नहीं दिया', pa: 'ਚੈੱਕ-ਇਨ ਦਾ ਜਵਾਬ ਨਹੀਂ ਦਿੱਤਾ' } },
 ];
 
 export const PHRASE_BY_ID = new Map(PHRASES.map((p) => [p.id, p]));

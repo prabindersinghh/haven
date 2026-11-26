@@ -105,16 +105,19 @@ Every layer of today's technology assumes a typical speaker:
 
 ## ✦ See it
 
-<table>
-  <tr>
-    <td width="34%" align="center"><img src="docs/screenshots/member-reply.png" alt="Member screen in Hindi" /><br/><sub><b>Member</b> · Hindi. The volunteer's English reply arrives in Hindi and is read aloud.</sub></td>
-    <td width="66%" align="center"><img src="docs/screenshots/dispatch-console.png" alt="Dispatch console" /><br/><sub><b>Dispatch console</b> · claimed urgent case, a "not okay" check-in case, quick replies, KPIs.</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/screenshots/member-checkin.png" alt="Check-in sheet" /><br/><sub><b>Check-in</b> · two giant answers, no typing.</sub></td>
-    <td align="center"><img src="docs/screenshots/onboarding.png" alt="Onboarding" /><br/><sub><b>Onboarding</b> · choose a role and the language you read.</sub></td>
-  </tr>
-</table>
+<p align="center"><img src="docs/screenshots/hero.png" alt="Haven dispatch console on desktop with the member app on a phone" width="100%" /></p>
+
+**The member app** is built around tactile phrase cards, modelled on the laminated communication boards used in speech therapy. Each card has a thick printed edge and presses down when tapped. Colour carries meaning: saffron for urgent, blue for needs, green for everyday.
+
+<p align="center"><img src="docs/screenshots/member-screens.png" alt="Three member screens in Hindi: voice and cards, a reply being read aloud, and a check-in" width="92%" /></p>
+<p align="center"><sub>Tap and speak or show a card &nbsp;·&nbsp; the volunteer's English reply arrives in Hindi and is read aloud &nbsp;·&nbsp; a check-in with two giant answers</sub></p>
+
+**The dispatch console** shows every request with a live waiting timer, a progress stepper for each case, and quick replies that show both your language and the member's.
+
+<p align="center"><img src="docs/screenshots/dispatch-console.png" alt="Dispatch console" width="92%" /></p>
+
+<p align="center"><img src="docs/screenshots/onboarding.png" alt="Onboarding: one card in three languages" width="92%" /></p>
+<p align="center"><sub>Onboarding: one card, read in Punjabi, English and Hindi.</sub></p>
 
 ---
 
@@ -527,6 +530,10 @@ timeline
 </p>
 
 **The mark:** a home that is also a speech bubble, holding a voice made clear. Shelter, conversation and Awaaz in one shape.
+
+**Type:** [Baloo 2](https://fonts.google.com/specimen/Baloo+2) and [Baloo Paaji 2](https://fonts.google.com/specimen/Baloo+Paaji+2) for display, [Mukta](https://fonts.google.com/specimen/Mukta) and [Mukta Mahee](https://fonts.google.com/specimen/Mukta+Mahee) for text. Both families are by Ek Type and drawn for Devanagari and Gurmukhi, so Hindi and Punjabi are first-class rather than fallback fonts. Fonts are bundled, so Haven works offline.
+
+**Tactile cards:** phrase cards borrow from physical AAC boards: a thick printed edge, a pressed state, and a colour code (saffron urgent, blue needs, green everyday).
 
 | Navy | Blue | Orange | Green | Red |
 |---|---|---|---|---|

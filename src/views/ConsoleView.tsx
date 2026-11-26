@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CARER_PHRASES, LANG_LABEL, phraseText } from '../i18n/phrases';
-import { MessageText, clock, timeAgo } from '../components/MessageText';
+import { MessageText, clock, stopwatch, timeAgo } from '../components/MessageText';
 import type { HavenApi } from '../model/useHaven';
 import { DEFAULT_SLA_MIN, conversation, sortedCases, type CaseRecord } from '../model/state';
-import { MSG, type CaseState, type CheckInContent, type Profile, type SayContent } from '../types';
+import { MSG, type CaseState, type CheckInContent, type Profile, type SayContent, type Urgency } from '../types';
 
 const STATE_LABEL: Record<CaseState, string> = {
-  new: 'New',
+  new: 'Waiting',
   claimed: 'Claimed',
   in_progress: 'In progress',
   escalated: 'Escalated',
   resolved: 'Resolved',
 };
+const URGENCY_LABEL: Record<Urgency, string> = { high: 'Urgent', medium: 'Need', low: 'Everyday' };
+const STEPS: CaseState[] = ['new', 'claimed', 'in_progress', 'resolved'];
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -22,155 +24,208 @@ function useNow(ms = 1000) {
   return now;
 }
 
-function reasonOf(c: CaseRecord, lang: Profile['lang']) {
-  return c.reasonPhraseId ? phraseText(c.reasonPhraseId, lang) : c.reasonText ?? '';
+const reasonOf = (c: CaseRecord, lang: Profile['lang']) => (c.reasonPhraseId ? phraseText(c.reasonPhraseId, lang) : c.reasonText ?? '');
+const isLate = (c: CaseRecord, now: number) => c.state === 'new' && now - c.openedAt > DEFAULT_SLA_MIN[c.urgency] * 60_000;
+
+function Stepper({ c }: { c: CaseRecord }) {
+  const reached = new Set(c.history.map((h) => h.state));
+  const at = (s: CaseState) => c.history.find((h) => h.state === s);
+  return (
+    <ol className="stepper" aria-label="Case progress">
+      {STEPS.map((s) => {
+        const h = at(s);
+        return (
+          <li key={s} className={`${reached.has(s) ? 'done' : ''} ${c.state === s ? 'current' : ''}`}>
+            <span className="stepper-dot" aria-hidden />
+            <span className="stepper-label">{s === 'new' ? 'Opened' : STATE_LABEL[s]}</span>
+            {h && (
+              <span className="stepper-meta">
+                {h.actor.name}, {clock(h.at)}
+              </span>
+            )}
+          </li>
+        );
+      })}
+      {c.escalatedAt && (
+        <li className="stepper-flag">
+          Escalated at {clock(c.escalatedAt)}
+        </li>
+      )}
+    </ol>
+  );
 }
 
 export function ConsoleView({ me, api }: { me: Profile; api: HavenApi }) {
   const now = useNow();
   const [tab, setTab] = useState<'open' | 'resolved'>('open');
-  const [selected, setSelected] = useState<string | null>(null); // member userId
+  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedCase, setSelectedCase] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
-  const canClaim = me.role === 'volunteer' || me.role === 'staff';
+  const canAct = me.role === 'volunteer' || me.role === 'staff';
 
   const cases = useMemo(() => sortedCases(api.state), [api.state]);
   const open = cases.filter((c) => c.state !== 'resolved');
   const resolved = cases.filter((c) => c.state === 'resolved');
   const members = useMemo(() => [...api.state.people.values()].filter((p) => p.role === 'member'), [api.state.people]);
 
-  const selectedMember = selected ? api.state.people.get(selected) ?? null : null;
-  const activeCase = selected ? open.find((c) => c.subject.userId === selected) ?? null : null;
+  const member = selected ? api.state.people.get(selected) ?? null : null;
+  const picked = selectedCase ? api.state.cases.get(selectedCase) ?? null : null;
+  const active = picked && picked.state !== 'resolved' && picked.subject.userId === selected ? picked : selected ? open.find((c) => c.subject.userId === selected) ?? null : null;
+  const lastResolved = selected && !active ? (picked?.state === 'resolved' && picked.subject.userId === selected ? picked : resolved.find((c) => c.subject.userId === selected) ?? null) : null;
+  const shownCase = active ?? lastResolved;
   const thread = selected ? conversation(api.state, me.userId, selected) : [];
 
-  // Auto-select the most urgent open case the first time one appears.
   useEffect(() => {
-    if (!selected && open[0]) setSelected(open[0].subject.userId);
+    if (!selected && open[0]) {
+      setSelected(open[0].subject.userId);
+      setSelectedCase(open[0].caseId);
+    }
   }, [open, selected]);
 
-  const claimTimes = cases.filter((c) => c.claimedAt).map((c) => (c.claimedAt! - c.openedAt) / 1000);
-  const medianClaim = claimTimes.length ? claimTimes.sort((a, b) => a - b)[Math.floor(claimTimes.length / 2)] : null;
-  const overdue = open.filter((c) => c.state === 'new' && now - c.openedAt > DEFAULT_SLA_MIN[c.urgency] * 60_000).length;
+  const claimTimes = cases.filter((c) => c.claimedAt).map((c) => (c.claimedAt! - c.openedAt) / 1000).sort((a, b) => a - b);
+  const medianClaim = claimTimes.length ? claimTimes[Math.floor(claimTimes.length / 2)] : null;
+  const late = open.filter((c) => isLate(c, now)).length;
+  const list = tab === 'open' ? open : resolved;
 
   async function send(input: { phraseId?: string; text?: string }) {
-    if (!selectedMember) return;
-    await api.reply(selectedMember, input, activeCase?.caseId);
+    if (!member) return;
+    await api.reply(member, input, active?.caseId);
     setDraft('');
   }
 
   return (
-    <div className="console">
-      <aside className="pane cases-pane">
-        <div className="kpis">
-          <div><b>{open.length}</b><span>open</span></div>
-          <div className={overdue ? 'warn' : ''}><b>{overdue}</b><span>over SLA</span></div>
-          <div><b>{medianClaim === null ? '—' : `${Math.round(medianClaim)}s`}</b><span>median claim</span></div>
+    <div className="cs">
+      <aside className="cs-queue">
+        <div className="cs-queue-head">
+          <h2>Requests</h2>
+          <div className="seg seg-sm">
+            <button aria-pressed={tab === 'open'} onClick={() => setTab('open')}>
+              Open <span>{open.length}</span>
+            </button>
+            <button aria-pressed={tab === 'resolved'} onClick={() => setTab('resolved')}>
+              Done <span>{resolved.length}</span>
+            </button>
+          </div>
         </div>
-        <div className="seg small">
-          <button className={tab === 'open' ? 'on' : ''} onClick={() => setTab('open')}>Open · {open.length}</button>
-          <button className={tab === 'resolved' ? 'on' : ''} onClick={() => setTab('resolved')}>Resolved · {resolved.length}</button>
-        </div>
-        <ul className="case-list">
-          {(tab === 'open' ? open : resolved).map((c) => {
-            const late = c.state === 'new' && now - c.openedAt > DEFAULT_SLA_MIN[c.urgency] * 60_000;
-            return (
-              <li key={c.caseId}>
-                <button className={`case-card ${c.urgency} ${selected === c.subject.userId ? 'sel' : ''}`} onClick={() => setSelected(c.subject.userId)}>
-                  <span className="case-top">
-                    <strong>{c.subject.name}</strong>
-                    <span className={`chip ${c.state}`}>{STATE_LABEL[c.state]}</span>
+        <dl className="cs-stats">
+          <div>
+            <dt>Open</dt>
+            <dd>{open.length}</dd>
+          </div>
+          <div className={late ? 'is-alert' : ''}>
+            <dt>Past time limit</dt>
+            <dd>{late}</dd>
+          </div>
+          <div>
+            <dt>Typical pick-up</dt>
+            <dd>{medianClaim === null ? '–' : medianClaim < 60 ? `${Math.round(medianClaim)}s` : `${Math.round(medianClaim / 60)}m`}</dd>
+          </div>
+        </dl>
+        <ul className="cs-list">
+          {list.map((c) => (
+            <li key={c.caseId}>
+              <button className={`cs-row u-${c.urgency} ${shownCase?.caseId === c.caseId ? 'is-sel' : ''} ${isLate(c, now) ? 'is-late' : ''}`} onClick={() => { setSelected(c.subject.userId); setSelectedCase(c.caseId); }}>
+                <span className="cs-row-main">
+                  <span className="cs-row-name">{c.subject.name}</span>
+                  <span className="cs-row-reason">{reasonOf(c, me.lang)}</span>
+                  <span className="cs-row-meta">
+                    <span className={`pill pill-${c.state}`}>{STATE_LABEL[c.state]}</span>
+                    {c.owner && <span>{c.owner.userId === me.userId ? 'You' : c.owner.name}</span>}
                   </span>
-                  <span className="case-reason">“{reasonOf(c, me.lang)}”</span>
-                  <span className="case-meta">
-                    <span className={`chip u-${c.urgency}`}>{c.urgency}</span>
-                    {LANG_LABEL[c.subject.lang]} → {LANG_LABEL[me.lang]}
-                    <span className={late ? 'late' : ''}>{timeAgo(c.openedAt, now)}</span>
-                  </span>
-                  {c.owner && <span className="case-owner">Owner: {c.owner.userId === me.userId ? 'you' : c.owner.name}</span>}
-                </button>
-              </li>
-            );
-          })}
-          {(tab === 'open' ? open : resolved).length === 0 && <li className="empty">No {tab} cases.</li>}
+                </span>
+                <span className="cs-row-time" title={c.state === 'new' ? 'Waiting for someone to claim' : 'Opened'}>
+                  {c.state === 'new' || c.state === 'escalated' ? stopwatch(c.openedAt, now) : timeAgo(c.openedAt, now)}
+                </span>
+              </button>
+            </li>
+          ))}
+          {list.length === 0 && <li className="cs-empty">{tab === 'open' ? 'Nothing waiting. New requests from members appear here.' : 'Resolved requests appear here.'}</li>}
         </ul>
       </aside>
 
-      <section className="pane thread-pane">
-        {selectedMember ? (
+      <section className="cs-main">
+        {member ? (
           <>
-            <header className="thread-head">
-              <div>
-                <h2>{selectedMember.name}</h2>
-                <p className="muted">
-                  Reads {LANG_LABEL[selectedMember.lang]} · messages are shown to you in {LANG_LABEL[me.lang]}
-                </p>
+            <header className="cs-head">
+              <div className="cs-who">
+                <span className="avatar avatar-lg">{member.name.slice(0, 1).toUpperCase()}</span>
+                <div>
+                  <h1>{member.name}</h1>
+                  <p>
+                    Reads {LANG_LABEL[member.lang]}. You see their messages in {LANG_LABEL[me.lang]}.
+                  </p>
+                </div>
               </div>
-              {activeCase && (
-                <div className="actions">
-                  <span className={`chip ${activeCase.state}`}>{STATE_LABEL[activeCase.state]}</span>
-                  {canClaim && (activeCase.state === 'new' || activeCase.state === 'escalated') && (
-                    <button className="primary" onClick={() => api.setCaseState(activeCase.caseId, activeCase.subject.userId, 'claimed')}>
-                      Claim
+              {active && canAct && (
+                <div className="cs-actions">
+                  {active.state !== 'escalated' && me.role !== 'staff' && (
+                    <button className="btn btn-quiet" onClick={() => api.setCaseState(active.caseId, active.subject.userId, 'escalated')}>
+                      Escalate to staff
                     </button>
                   )}
-                  {canClaim && activeCase.state !== 'escalated' && me.role !== 'staff' && (
-                    <button className="ghost" onClick={() => api.setCaseState(activeCase.caseId, activeCase.subject.userId, 'escalated')}>
-                      Escalate
+                  {(active.state === 'new' || active.state === 'escalated') && (
+                    <button className="btn btn-primary" onClick={() => api.setCaseState(active.caseId, active.subject.userId, 'claimed')}>
+                      Claim request
                     </button>
                   )}
-                  {canClaim && activeCase.owner && (
-                    <button className="ok" onClick={() => api.setCaseState(activeCase.caseId, activeCase.subject.userId, 'resolved')}>
-                      Resolve
+                  {active.owner && active.state !== 'escalated' && (
+                    <button className="btn btn-done" onClick={() => api.setCaseState(active.caseId, active.subject.userId, 'resolved')}>
+                      Mark resolved
                     </button>
                   )}
                 </div>
               )}
             </header>
 
-            {activeCase && (
-              <ol className="timeline" aria-label="Case timeline">
-                {activeCase.history.map((h, i) => (
-                  <li key={i} className={h.state}>
-                    <b>{STATE_LABEL[h.state]}</b> · {h.actor.name} · {clock(h.at)}
-                  </li>
-                ))}
-              </ol>
+            {shownCase && (
+              <div className={`cs-case u-${shownCase.urgency}`}>
+                <div className="cs-case-ask">
+                  <span className={`pill pill-u-${shownCase.urgency}`}>{URGENCY_LABEL[shownCase.urgency]}</span>
+                  <span className="cs-case-text">{reasonOf(shownCase, me.lang)}</span>
+                </div>
+                <Stepper c={shownCase} />
+              </div>
             )}
 
-            <ul className="thread">
+            <ul className="cs-thread">
               {thread.map((m) => {
                 const mine = m.senderId === me.userId;
                 if (m.type === MSG.CHECKIN) {
                   const c = m.content as CheckInContent;
                   return (
-                    <li key={m.id} className="bubble sys">
-                      {c.kind === 'ask' ? `Check-in sent by ${c.from.name}` : c.response === 'ok' ? 'Check-in: “I’m okay”' : 'Check-in: “Not okay”'}
+                    <li key={m.id} className="msg msg-note">
+                      {c.kind === 'ask' ? `${c.from.name} sent a check-in` : c.response === 'ok' ? 'Answered the check-in: I’m okay' : 'Answered the check-in: Not okay'}
                       <time>{clock(m.sentTime)}</time>
                     </li>
                   );
                 }
                 const c = m.content as SayContent;
                 return (
-                  <li key={m.id} className={`bubble ${mine ? 'mine' : 'theirs'} ${c.urgency === 'high' && !mine ? 'urgent' : ''}`}>
-                    {!mine && <b className="who">{c.from.name}</b>}
+                  <li key={m.id} className={`msg ${mine ? 'msg-out' : 'msg-in'} ${!mine && c.urgency === 'high' ? 'msg-urgent' : ''}`}>
+                    {!mine && <b className="msg-from">{c.from.name}</b>}
                     <MessageText content={c} lang={me.lang} />
-                    <time>{clock(m.sentTime)}</time>
+                    <span className="msg-foot">
+                      <time>{clock(m.sentTime)}</time>
+                    </span>
                   </li>
                 );
               })}
-              {thread.length === 0 && <li className="empty">No messages yet.</li>}
+              {thread.length === 0 && <li className="cs-empty">No messages with {member.name} yet.</li>}
             </ul>
-            {api.typingFrom === selectedMember.userId && <p className="typing">{selectedMember.name} is responding…</p>}
+            {api.typingFrom === member.userId && <p className="typing"><i /><i /><i /></p>}
 
-            <div className="composer">
-              <div className="quick">
+            <div className="cs-compose">
+              <p className="cs-compose-hint">Quick replies arrive in {LANG_LABEL[member.lang]} and are read aloud to {member.name.split(' ')[0]}.</p>
+              <div className="cs-quick">
                 {CARER_PHRASES.map((p) => (
-                  <button key={p.id} className="chip-btn" onClick={() => send({ phraseId: p.id })} title={`${p.text[selectedMember.lang]} (${LANG_LABEL[selectedMember.lang]})`}>
-                    {p.text[me.lang]}
+                  <button key={p.id} className="qr" onClick={() => send({ phraseId: p.id })}>
+                    <span>{p.text[me.lang]}</span>
+                    {member.lang !== me.lang && <small>{p.text[member.lang]}</small>}
                   </button>
                 ))}
               </div>
               <form
-                className="compose-row"
+                className="cs-input"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (draft.trim()) void send({ text: draft.trim() });
@@ -180,57 +235,65 @@ export function ConsoleView({ me, api }: { me: Profile; api: HavenApi }) {
                   value={draft}
                   onChange={(e) => {
                     setDraft(e.target.value);
-                    api.notifyTyping(selectedMember.userId);
+                    api.notifyTyping(member.userId);
                   }}
-                  placeholder={`Free text is delivered as written. Quick replies above arrive in ${LANG_LABEL[selectedMember.lang]}.`}
+                  placeholder="Or type a message (sent exactly as written)"
+                  aria-label={`Message ${member.name}`}
                 />
-                <button className="primary" disabled={!draft.trim()}>Send</button>
+                <button className="btn btn-primary" disabled={!draft.trim()}>
+                  Send
+                </button>
               </form>
             </div>
           </>
         ) : (
-          <div className="empty-state">
-            <h2>Dispatch room</h2>
-            <p className="muted">Urgent messages from members appear on the left as cases. Claim one to take ownership; unclaimed cases escalate after the SLA.</p>
+          <div className="cs-blank">
+            <h1>No request selected</h1>
+            <p>When a member sends an urgent card or answers a check-in with “not okay”, it appears in Requests. Claim it to let them know you’re on it.</p>
           </div>
         )}
       </section>
 
-      <aside className="pane people-pane">
-        <h3>Members</h3>
-        <ul className="people">
+      <aside className="cs-people">
+        <div className="cs-people-head">
+          <h2>Members</h2>
+          {canAct && members.length > 0 && (
+            <button className="btn btn-quiet btn-sm" onClick={() => members.forEach((p) => void api.askCheckIn(p))}>
+              Check in with all
+            </button>
+          )}
+        </div>
+        <ul className="cs-roster">
           {members.map((p) => {
             const last = [...api.state.checkIns.values()].filter((k) => k.subjectId === p.userId).sort((a, b) => b.askedAt - a.askedAt)[0];
+            const state = !last ? 'none' : last.response === 'ok' ? 'ok' : last.response === 'not_ok' ? 'bad' : 'pending';
+            const note = !last ? 'No check-in yet' : state === 'ok' ? 'Okay' : state === 'bad' ? 'Not okay' : `Asked ${timeAgo(last.askedAt, now)} ago`;
             return (
-              <li key={p.userId}>
-                <button className={`person ${selected === p.userId ? 'sel' : ''}`} onClick={() => setSelected(p.userId)}>
+              <li key={p.userId} className={selected === p.userId ? 'is-sel' : ''}>
+                <button className="cs-person" onClick={() => { setSelected(p.userId); setSelectedCase(null); }}>
                   <span className="avatar">{p.name.slice(0, 1).toUpperCase()}</span>
-                  <span>
+                  <span className="cs-person-text">
                     <strong>{p.name}</strong>
                     <small>
-                      {LANG_LABEL[p.lang]}
-                      {last && ` · check-in ${last.response === 'ok' ? '✓ okay' : last.response === 'not_ok' ? '⚠ not okay' : `pending ${timeAgo(last.askedAt, now)}`}`}
+                      <span className={`ci ci-${state}`} aria-hidden />
+                      {note}
                     </small>
                   </span>
+                  <span className="lang-tag">{LANG_LABEL[p.lang]}</span>
                 </button>
-                {canClaim && (
-                  <button className="link" onClick={() => api.askCheckIn(p)}>
+                {canAct && (
+                  <button className="cs-checkin" onClick={() => api.askCheckIn(p)} aria-label={`Send check-in to ${p.name}`}>
                     Check in
                   </button>
                 )}
               </li>
             );
           })}
-          {members.length === 0 && <li className="empty">Members appear here when they join.</li>}
+          {members.length === 0 && <li className="cs-empty">Members appear here when they join Haven.</li>}
         </ul>
-        {canClaim && members.length > 0 && (
-          <button className="ghost full" onClick={() => members.forEach((p) => void api.askCheckIn(p))}>
-            Check in with everyone
-          </button>
-        )}
-        <div className="sla">
-          <h3>Escalation SLA</h3>
-          <p className="muted">Unclaimed after: high {DEFAULT_SLA_MIN.high} min · medium {DEFAULT_SLA_MIN.medium} min · low {DEFAULT_SLA_MIN.low} min. Missed check-ins open a case after 10 min.</p>
+        <div className="cs-rules">
+          <h3>Time limits</h3>
+          <p>Urgent requests go to staff if nobody claims them in {DEFAULT_SLA_MIN.high} minutes, other needs in {DEFAULT_SLA_MIN.medium}. A check-in with no answer after 10 minutes becomes a request.</p>
         </div>
       </aside>
     </div>

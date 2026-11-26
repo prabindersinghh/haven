@@ -5,7 +5,9 @@
   "description": "Haven — chat for people who can't be understood. Accessible, multilingual care chat powered by Awaaz, built on the Nexconn Chat SDK.",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=18.17" },
+  "engines": {
+    "node": ">=18.17"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -14,6 +16,10 @@
     "test": "node --test server/api.test.js test/match.test.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/baloo-2": "^5.3.0",
+    "@fontsource-variable/baloo-paaji-2": "^5.3.0",
+    "@fontsource/mukta": "^5.3.0",
+    "@fontsource/mukta-mahee": "^5.3.0",
     "@nexconn/chat": "26.2.1",
     "@nexconn/engine": "26.2.1",
     "react": "^18.3.1",

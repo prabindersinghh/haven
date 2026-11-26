@@ -17,10 +17,14 @@ const STRINGS = {
   conversation: { en: 'Conversation', hi: 'बातचीत', pa: 'ਗੱਲਬਾਤ' },
   urgent: { en: 'Urgent', hi: 'ज़रूरी', pa: 'ਜ਼ਰੂਰੀ' },
   needs: { en: 'Needs', hi: 'ज़रूरतें', pa: 'ਲੋੜਾਂ' },
-  other: { en: 'Other', hi: 'अन्य', pa: 'ਹੋਰ' },
+  other: { en: 'Everyday', hi: 'रोज़ की बातें', pa: 'ਰੋਜ਼ ਦੀਆਂ ਗੱਲਾਂ' },
   speakAloud: { en: 'Read aloud', hi: 'ज़ोर से पढ़ें', pa: 'ਉੱਚੀ ਪੜ੍ਹੋ' },
   noSpeech: { en: 'Voice input is not available in this browser. Choose a phrase below.', hi: 'इस ब्राउज़र में आवाज़ इनपुट उपलब्ध नहीं है। नीचे चुनें।', pa: 'ਇਸ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਆਵਾਜ਼ ਇਨਪੁਟ ਉਪਲਬਧ ਨਹੀਂ। ਹੇਠਾਂ ਚੁਣੋ।' },
   you: { en: 'You', hi: 'आप', pa: 'ਤੁਸੀਂ' },
+  showCard: { en: 'Or show a card', hi: 'या कार्ड दिखाएँ', pa: 'ਜਾਂ ਕਾਰਡ ਦਿਖਾਓ' },
+  tryAgain: { en: 'Try again', hi: 'फिर से बोलें', pa: 'ਫਿਰ ਬੋਲੋ' },
+  stop: { en: 'Tap to stop', hi: 'रोकने के लिए टैप करें', pa: 'ਰੋਕਣ ਲਈ ਟੈਪ ਕਰੋ' },
+  latest: { en: 'Latest reply', hi: 'नया जवाब', pa: 'ਨਵਾਂ ਜਵਾਬ' },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type UiKey = keyof typeof STRINGS;
