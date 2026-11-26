@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" role="img" aria-label="Haven — chat for people who can't be understood">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A1F44"/><stop offset=".65" stop-color="#12306B"/><stop offset="1" stop-color="#1E5EFF"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2D6BFF"/><stop offset="1" stop-color="#0A1F44"/></linearGradient>
+    <radialGradient id="glow" cx=".82" cy=".35" r=".55"><stop offset="0" stop-color="#E8833A" stop-opacity=".35"/><stop offset="1" stop-color="#E8833A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1280" height="420" rx="28" fill="url(#sky)"/>
+  <rect width="1280" height="420" rx="28" fill="url(#glow)"/>
+  <!-- waveform motif -->
+  <g fill="#FFFFFF" opacity=".08" transform="translate(0 -52)">
+    <rect x="860" y="170" width="14" height="80" rx="7"/><rect x="890" y="130" width="14" height="160" rx="7"/><rect x="920" y="90" width="14" height="240" rx="7"/>
+    <rect x="950" y="140" width="14" height="140" rx="7"/><rect x="980" y="110" width="14" height="200" rx="7"/><rect x="1010" y="160" width="14" height="100" rx="7"/>
+    <rect x="1040" y="120" width="14" height="180" rx="7"/><rect x="1070" y="150" width="14" height="120" rx="7"/><rect x="1100" y="180" width="14" height="60" rx="7"/>
+  </g>
+  <!-- mark -->
+  <g transform="translate(80 92) scale(1.25)">
+    <rect width="128" height="128" rx="30" fill="url(#bg)" stroke="#FFFFFF" stroke-opacity=".25" stroke-width="1.5"/>
+    <path d="M64 25 L100 53 V89 Q100 95 94 95 H52 L38 106 L41 95 H34 Q28 95 28 89 V53 Z" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round"/>
+    <rect x="47" y="63" width="8" height="18" rx="4" fill="#1E5EFF"/><rect x="60" y="55" width="8" height="34" rx="4" fill="#E8833A"/><rect x="73" y="63" width="8" height="18" rx="4" fill="#1E5EFF"/>
+  </g>
+  <g font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="276" y="178" font-size="84" font-weight="800" fill="#FFFFFF" letter-spacing="-3">Haven</text>
+    <text x="280" y="214" font-size="20" font-weight="700" fill="#8FB0FF" letter-spacing="3">POWERED BY AWAAZ · BUILT ON NEXCONN</text>
+    <text x="80" y="318" font-size="34" font-weight="700" fill="#FFFFFF">Chat for people who can't be understood.</text>
+    <text x="80" y="356" font-size="20" fill="#C9D6F5">Speak in your own way · confirm with one tap · answered in your language</text>
+  </g>
+  <!-- language chips -->
+  <g font-family="Inter, 'Segoe UI', 'Noto Sans Devanagari', 'Noto Sans Gurmukhi', Helvetica, Arial, sans-serif" font-size="18" font-weight="700">
+    <rect x="924" y="300" width="96" height="40" rx="20" fill="#FFFFFF" fill-opacity=".12"/><text x="972" y="326" text-anchor="middle" fill="#FFFFFF">English</text>
+    <rect x="1030" y="300" width="80" height="40" rx="20" fill="#FFFFFF" fill-opacity=".12"/><text x="1070" y="326" text-anchor="middle" fill="#FFFFFF">हिन्दी</text>
+    <rect x="1120" y="300" width="80" height="40" rx="20" fill="#E8833A"/><text x="1160" y="326" text-anchor="middle" fill="#FFFFFF">ਪੰਜਾਬੀ</text>
+  </g>
+</svg>

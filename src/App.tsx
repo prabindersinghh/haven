@@ -4,6 +4,7 @@ import { MemberView } from './views/MemberView';
 import { ConsoleView } from './views/ConsoleView';
 import { useHaven } from './model/useHaven';
 import { LANG_LABEL } from './i18n/phrases';
+import { Logo } from './components/Logo';
 import type { Lang, Profile, Role, Session } from './types';
 
 const PROFILE_KEY = 'haven.profile.v1';
@@ -73,7 +74,7 @@ function Shell({ stored, onSignOut }: { stored: Stored; onSignOut: () => void })
     <div className={`app ${isMember ? 'is-member' : 'is-console'}`}>
       <header className="topbar">
         <div className="brand small">
-          <span className="logo" aria-hidden>H</span>
+          <Logo size={32} />
           <strong>Haven</strong>
           {!isMember && <span className="crumb">Dispatch room</span>}
         </div>

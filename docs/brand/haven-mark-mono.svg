@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Haven">
+  <path d="M64 25 L100 53 V89 Q100 95 94 95 H52 L38 106 L41 95 H34 Q28 95 28 89 V53 Z" fill="none" stroke="#0A1F44" stroke-width="8" stroke-linejoin="round"/>
+  <rect x="47" y="63" width="8" height="18" rx="4" fill="#0A1F44"/>
+  <rect x="60" y="55" width="8" height="34" rx="4" fill="#E8833A"/>
+  <rect x="73" y="63" width="8" height="18" rx="4" fill="#0A1F44"/>
+</svg>

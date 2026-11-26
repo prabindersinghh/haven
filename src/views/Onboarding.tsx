@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LANG_LABEL } from '../i18n/phrases';
 import type { Lang, Role } from '../types';
+import { Logo } from '../components/Logo';
 
 const ROLES: { role: Role; title: string; body: string }[] = [
   { role: 'member', title: 'I need support', body: 'Large buttons, voice input with Awaaz, and a direct line to your care team.' },
@@ -18,7 +19,7 @@ export function Onboarding({ onDone, busy, error }: { onDone: (v: { name: string
     <main className="onboard">
       <section className="onboard-hero">
         <div className="brand">
-          <span className="logo" aria-hidden>H</span>
+          <Logo size={64} />
           <div>
             <h1>Haven</h1>
             <p className="powered">powered by Awaaz · built on Nexconn</p>
